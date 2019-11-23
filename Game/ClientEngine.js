@@ -47,6 +47,23 @@ $(document).ready(() => {
         });
     
     })
+
+    socket.on('OtherPlayers', (OtherPlayers) => {
+        OtherPlayers.forEach(element => {
+            let other = new GameObjectClient(element.position.x, element.position.y, 20, 20);
+            other.color = 'rgb(23, 31, 189)';
+            other.draw();
+            element.body.forEach(BodyPos => {
+                let Body = new GameObjectClient(BodyPos.position.x, BodyPos.position.y, 20, 20);
+                Body.color = 'rgba(23, 31, 189, 0.7)';
+                Body.draw();
+            });
+        });
+    })
+
+    socket.on('PlayerDead', () => {
+        Player_.dead = true;
+    })
     
 })
 
