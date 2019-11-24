@@ -1,19 +1,27 @@
-var socket = io();
+var socket = io()//{transports: ['websocket'], upgrade: false});
+
+$(window).on("beforeunload", () => {
+    socket.close();
+})
+
+//TODO      Costruire contenitore di oggetti da disegnare in modo tale che si aggiorna solo la posizione e vengono disegnati in una volta sola
 
 let GameObjectClient = function (x, y, width, height){
 
-    GameObject.call(this, x, y, width, height);
-    this.color = 'rgb(0, 0, 0)'
+    this.Position = {x : x, y : y};
+    this.Width = width;
+    this.Height = height;
+    this.Color = 'rgb(0, 0, 0)'
 
-    this.draw = function () {
+    this.Draw = function () {
         let ctx = $('#GameCanvas')[0].getContext('2d');
-        ctx.fillStyle = this.color;
-        ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
+        ctx.fillStyle = this.Color;
+        ctx.fillRect(this.Position.x, 1000 - this.Position.y, this.Width, 0-this.Height);
     }
 
 }
 
-function clearAll(){
+function ClearAll(){
     let gameCanvas = $('#GameCanvas')[0];
     let ctx = gameCanvas.getContext('2d');
     ctx.clearRect(0, 0, gameCanvas.width, gameCanvas.height);
@@ -22,47 +30,47 @@ function clearAll(){
 $(document).ready(() => {
     
     let Player_ = new GameObjectClient(0, 0, 20, 20);
-    Player_.color = 'rgb(116, 52, 235)';
-    Player_.dead = false;
-    console.log(Player_);
+    Player_.Color = 'rgb(116, 52, 235)';
 
-    socket.on('PlayerPosition', (ServerPos, ServerBody) => {
+    socket.on('PlayerPosition', (serverPos, serverBodyPos) => {
 
-        console.log(ServerPos, ServerBody)
-        clearAll();
-    
-        if (Player_.dead)
-            return;
+        ClearAll();
 
-        Player_.position = ServerPos;
-        Player_.draw();
+        Player_.Position = serverPos;
+        Player_.Draw();
 
-        if (ServerBody == undefined)
-            return;
-
-        ServerBody.forEach(element => {
-            let Body = new GameObjectClient(element.position.x, element.position.y, 20, 20);
-            Body.color = 'rgba(116, 52, 235, 0.7)';
-            Body.draw();
+        serverBodyPos.forEach(element => {
+            let Body = new GameObjectClient(element.x, element.y, 20, 20);
+            Body.Color = 'rgba(116, 52, 235, 0.7)';
+            Body.Draw();
         });
     
     })
 
     socket.on('OtherPlayers', (OtherPlayers) => {
         OtherPlayers.forEach(element => {
-            let other = new GameObjectClient(element.position.x, element.position.y, 20, 20);
-            other.color = 'rgb(23, 31, 189)';
-            other.draw();
-            element.body.forEach(BodyPos => {
-                let Body = new GameObjectClient(BodyPos.position.x, BodyPos.position.y, 20, 20);
-                Body.color = 'rgba(23, 31, 189, 0.7)';
-                Body.draw();
+            let other = new GameObjectClient(element.Position.x, element.Position.y, 20, 20);
+            other.Color = 'rgb(23, 31, 189)';
+            other.Draw();
+            element.Body.forEach(BodyPos => {
+                let Body = new GameObjectClient(BodyPos.Position.x, BodyPos.Position.y, 20, 20);
+                Body.Color = 'rgba(23, 31, 189, 0.7)';
+                Body.Draw();
             });
         });
     })
 
+    socket.on('Apples', (apples) => {
+        apples.forEach(element => {
+            let apple = new GameObjectClient(element.x, element.y, 20, 20);
+            apple.Color = 'rgb(250, 11, 2)'
+            apple.Draw();
+        })
+    })
+
     socket.on('PlayerDead', () => {
-        Player_.dead = true;
+        console.log('Morto')
+        ClearAll();
     })
     
 })
@@ -70,6 +78,7 @@ $(document).ready(() => {
 
 
 document.addEventListener('keydown', function(event) {
+    let movement = '';
     switch (event.keyCode) {
         case 65: // A
             movement = 'left';
