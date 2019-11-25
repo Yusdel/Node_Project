@@ -1,7 +1,7 @@
 
 const __OBJECTS = [];
 const __SolidObjects = [];
-const __ServerTick = 25;
+const __ServerTick = 2;
 
 const GameObject = function (x, y, width, height, solid) {
 
@@ -163,7 +163,7 @@ module.exports.Engine = Engine = function (io){
                     return true
                 let body = [];
                 other.Body.forEach(element => {
-                    body.push({Position : element.Position})
+                    body.push(element.Position)
                 });
                 sendOtherPlayer.push({
                     Position : other.Position,
