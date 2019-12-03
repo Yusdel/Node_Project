@@ -4,7 +4,8 @@ $(window).on("beforeunload", () => {
     socket.close();
 })
 
-let SAFEDEBUG = 0;
+const MapWidth = 500;
+const MapHeight = 500;
 //TODO      Costruire contenitore di oggetti da disegnare in modo tale che si aggiorna solo la posizione e vengono disegnati in una volta sola
 
 let GameObjectClient = function (x, y, width, height){
@@ -21,7 +22,7 @@ let GameObjectClient = function (x, y, width, height){
             element.Draw();
         });
         ctx.fillStyle = this.Color;
-        ctx.fillRect(this.Position.x, 1000 - this.Position.y, this.Width, 0-this.Height);
+        ctx.fillRect(this.Position.x, MapHeight - this.Position.y, this.Width, 0-this.Height);
     }
 
     this.RefreshObjPos = function(newObjPos, newObjsPosConnected, otherObjsColor) {     // Position, []Position
@@ -99,7 +100,7 @@ $(document).ready(() => {
 
     socket.on('PlayerDead', () => {
         console.log('Morto')
-        Player_.Dead = true;
+        socket.emit('Restart');
     })
     
 })

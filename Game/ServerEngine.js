@@ -52,21 +52,30 @@ const GameObject = function (x, y, width, height, solid) {
 
 // Region -   -   -   -   -   -   -   -
 
+const MapWidth = 500;
+const MapHeight = 500;
 const Players = [];
+const PlayersStartPos = [
+    {x : 0, y : 0},
+    {x : 0, y : MapHeight - 20},
+    {x : MapWidth - 20, y : MapHeight - 20},
+    {x : MapWidth - 20, y : 0},
+];
 const Apples = [];
 
-let Wall = new GameObject(-2, 0, 1, 1000, true)
+let Wall = new GameObject(-2, 0, 1, MapHeight, true)
 Wall.Name = 'left'
-Wall = new GameObject(1001, 0, 1, 1000, true)
+Wall = new GameObject(MapWidth+1, 0, 1, MapHeight, true)
 Wall.Name = 'right'
-Wall = new GameObject(0, -2, 1000, 1, true)
+Wall = new GameObject(0, -2, MapWidth, 1, true)
 Wall.Name = 'Down'
-Wall = new GameObject(0, 1001, 1000, 1, true)
+Wall = new GameObject(0, MapHeight+1, MapWidth, 1, true)
 Wall.Name = 'up'
 
 const PlayerObject = function (x, y, width, height){
 
     GameObject.call(this, x, y, width, height, true);
+    this.PlayerN = Players.length;
     Players.push(this);
     this.Arrays.push(Players);
 
@@ -121,11 +130,21 @@ const PlayerObject = function (x, y, width, height){
         this.Destroy();
     }
 
+    this.Reset = function(){
+        __SolidObjects.push(this);
+        this.Body = [];
+        this.MaxLength = 3;
+        this.Position.x = PlayersStartPos[this.PlayerN].x;
+        this.Position.y = PlayersStartPos[this.PlayerN].y;
+        this.Movement.Type = undefined;
+        this.Dead = false;
+    }
+
 }
 
 let GenerateApple = function (){
-    let x = Math.floor(Math.random() * 50);
-    let y = Math.floor(Math.random() * 50);
+    let x = Math.floor(Math.random() * (MapWidth / 20));
+    let y = Math.floor(Math.random() * (MapHeight / 20));
     let apple = new GameObject(x*20, y*20, 20,20, true);
     Apples.push(apple);
     apple.Arrays.push(Apples);
@@ -143,6 +162,8 @@ module.exports.Engine = Engine = function (io){
         // Region -   -   -   -   -   -   -   -
         
         let player = new PlayerObject (0, 0, 20, 20);
+        player.Position.x = PlayersStartPos[player.PlayerN].x;
+        player.Position.y = PlayersStartPos[player.PlayerN].y;
         player.SendDead = () => socket.emit('PlayerDead');
         player.SendPosition = () => {
             if (player != undefined && !player.Dead){
@@ -185,6 +206,10 @@ module.exports.Engine = Engine = function (io){
                 return;
         });
 
+        socket.on('Restart', function(){
+            player.Reset();
+        })
+
         // End  -   -   -   -   -   -   -   -
 
         socket.on('disconnect', () => {
@@ -206,15 +231,16 @@ const Cicle = setInterval(() => {
 
     // Region -   -   -   -   -   -   -   -
 
-    let DeadPlayer = []                 // On collide controll first he see who die and the kill
+    let DeadPlayer = []                 // On collide controll first see who die and then kill
     Players.every( player => {
-
-        player.SendPosition();
+        
         player.SendOtherPlayers();
         player.SendApples();
 
         if (player.Dead)
             return true;
+        
+        player.SendPosition();
 
         if(player.Movement.Can && player.Movement.Type != undefined && !player.Dead){
             player.AddBody(player.Position);
