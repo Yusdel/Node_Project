@@ -3,7 +3,11 @@ const http = require('http').createServer(app);
 const io = require('socket.io')(http);
 const Snake = require('./../Game/ServerEngine');
 
-Snake.Engine(io);
+Snake.Engine(io.of('/Room-1'));
+Snake.Engine(io.of('/Room-2'));
+Snake.Engine(io.of('/Room-3'));
+Snake.Engine(io.of('/Room-4'));
+Snake.Engine(io.of('/Room-5'));
 
 app.get('/', function(req, res){
     res.sendFile(process.cwd() + '/Client/GamePage.html');

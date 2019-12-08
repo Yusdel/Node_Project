@@ -1,5 +1,12 @@
-var socket = io()//{transports: ['websocket'], upgrade: false});
 
+let GetParams = () => {
+    let url_string = window.location.href;
+    let url = new URL(url_string);
+    return url.searchParams.get("room");
+}
+
+var socket = io('/'+GetParams())//{transports: ['websocket'], upgrade: false});
+socket.on('Connesso', (x) => console.log('Connesso ' + x))
 $(window).on("beforeunload", () => {
     socket.close();
 })
@@ -59,14 +66,17 @@ $(document).ready(() => {
     
     let Player_ = new GameObjectClient(0, 0, 20, 20);
     let Enemies_ = [];
-    let Apple_ = new GameObjectClient(0,0,20,20)
+    let Apple_ = new GameObjectClient(0,0,20,20);
+    let PowerUp_ = new GameObjectClient(0,0,20,20);
+    PowerUp_.Color = 'rgb(222, 215, 22)';
     Apple_.Color = 'rgb(250, 11, 2)';
     Player_.Color = 'rgb(116, 52, 235)';
 
     setInterval(() => {
         ClearAll();
         if (!Player_.Dead) Player_.Draw();
-        Apple_.Draw()
+        Apple_.Draw();
+        PowerUp_.Draw();
         Enemies_.forEach(enemy => enemy.Draw());
     }, 10)
 
@@ -95,6 +105,12 @@ $(document).ready(() => {
     socket.on('Apples', (apples) => {
         
         Apple_.RefreshObjPos(apples[0])
+
+    })
+
+    socket.on('PowerUps', (powerUp) => {
+        
+        PowerUp_.RefreshObjPos(powerUp[0])
 
     })
 
