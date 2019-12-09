@@ -53,8 +53,9 @@ module.exports.Engine = Engine = function (io){
 
     // Region -   -   -   -   -   -   -   -
 
-    const MapWidth = 500;
+    const MapWidth = 1000;
     const MapHeight = 500;
+    const Movements = ['up', 'right', 'down', 'left']
     const Players = [];
     const PlayersStartPos = [
         {x : 0, y : 0},
@@ -89,16 +90,16 @@ module.exports.Engine = Engine = function (io){
         }
         this.Move = function(movement){
             switch(movement){
-                case 'left':
+                case Movements[3]:
                     this.Position.x -= this.Movement.Speed;
                     break;
-                case 'right':
+                case Movements[1]:
                     this.Position.x += this.Movement.Speed;
                     break;
-                case 'up':
+                case Movements[0]:
                     this.Position.y += this.Movement.Speed;
                     break;
-                case 'down':
+                case Movements[2]:
                     this.Position.y -= this.Movement.Speed;
                     break;
             }
@@ -158,7 +159,21 @@ module.exports.Engine = Engine = function (io){
         apple.Name = 'Apple';
     }
 
-    const PowerUpTypes = ['x3', 'speed', 'slow']
+    const PowerUpTypes = [
+        {Name : 'Apple_Triplicated', Durate : 16000, Effect : function (player) {
+            player.Stretch += 2;
+            setTimeout(() => player.Stretch -= 2, this.Durate);
+        }}, 
+        {Name : 'Faster', Durate : 10000, Effect : function (player) {
+            player.Movement.Cooldown -= 25;
+            setTimeout(() => player.Movement.Cooldown += 25, this.Durate);
+        }}, 
+        {Name : 'Slower', Durate : 3000, Effect : function (player) {
+            player.Movement.Cooldown += 25;
+            setTimeout(() => player.Movement.Cooldown -= 25, this.Durate);
+        }}
+    ]
+    const PowerUpCooldown = 6000;
 
     let GeneratePowerUp = function(){
         powerUp = GenerateRandomPosition();
@@ -224,9 +239,29 @@ module.exports.Engine = Engine = function (io){
             PowerUps.forEach(powerUp => powerUps.push(powerUp.Position));
             socket.emit('PowerUps', powerUps);
         }
+        player.SendPowerUpType = (type, duration) => {
+            socket.emit('PowerUpTaken', type, duration);
+        }
 
         socket.on('Movement', function(movement){
-            player.Movement.Type = movement;
+            switch(movement){
+                case Movements[0]:
+                    if (player.Movement.Type === Movements[2]) return;
+                    player.Movement.Type = Movements[0];
+                    break;
+                case Movements[1]:
+                    if (player.Movement.Type === Movements[3]) return;
+                    player.Movement.Type = Movements[1];
+                    break;
+                case Movements[2]:
+                    if (player.Movement.Type === Movements[0]) return;
+                    player.Movement.Type = Movements[2];
+                    break;
+                case Movements[3]:
+                    if (player.Movement.Type === Movements[1]) return;
+                    player.Movement.Type = Movements[3];
+                    break;
+            }
             if (!player.Movement.Can)
                 return;
         });
@@ -281,9 +316,20 @@ module.exports.Engine = Engine = function (io){
                     return true;
                 }
                 if(player.ObjCollided.Name == 'PowerUp'){
-                    player.Stretch = 3;
+                    switch(player.ObjCollided.Type){
+                        case PowerUpTypes[0]:
+                            player.ObjCollided.Type.Effect(player)
+                            break;
+                        case PowerUpTypes[1]:
+                            player.ObjCollided.Type.Effect(player)
+                            break;
+                        case PowerUpTypes[2]:
+                            player.ObjCollided.Type.Effect(player)
+                            break;
+                    }
+                    player.SendPowerUpType(player.ObjCollided.Type.Name, player.ObjCollided.Type.Durate);
                     player.ObjCollided.Destroy();
-                    GeneratePowerUp();
+                    setTimeout(GeneratePowerUp, PowerUpCooldown);
                     return true;
                 }
                 DeadPlayer.push(player);

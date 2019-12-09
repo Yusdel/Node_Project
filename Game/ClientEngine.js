@@ -11,7 +11,7 @@ $(window).on("beforeunload", () => {
     socket.close();
 })
 
-const MapWidth = 500;
+const MapWidth = 1000;
 const MapHeight = 500;
 //TODO      Costruire contenitore di oggetti da disegnare in modo tale che si aggiorna solo la posizione e vengono disegnati in una volta sola
 
@@ -76,7 +76,7 @@ $(document).ready(() => {
         ClearAll();
         if (!Player_.Dead) Player_.Draw();
         Apple_.Draw();
-        PowerUp_.Draw();
+        if (PowerUp_.Position) PowerUp_.Draw();
         Enemies_.forEach(enemy => enemy.Draw());
     }, 10)
 
@@ -114,6 +114,43 @@ $(document).ready(() => {
 
     })
 
+    const PowerUpActived = [];
+
+    let startPowerUpBar = (type, duration) => {
+        if (!PowerUpActived[type]){
+            let timer = {};
+            timer.TEMPO = Date.now();
+            timer.progress = $('#'+type)[0].style
+            timer.Interval = setInterval(() => {
+                timer.c = 100 - 100/duration*(Date.now()-timer.TEMPO);
+                timer.progress.width = ''+timer.c+'%'
+                if (timer.c <= 0){
+                    $('#'+type).closest('.progress').hide();
+                    PowerUpActived[type] = undefined;
+                    clearInterval(timer.Interval);
+                }
+            }, 40)
+            PowerUpActived[type] = timer;
+            return;
+        }
+        PowerUpActived[type].TEMPO = Date.now();
+    }
+
+    socket.on('PowerUpTaken', (type, duration) => {
+        let html = $('#'+type)[0];
+        if (html == undefined){
+            $('.PowerUps').append(`
+            <div class="progress mb-3">
+                <div class="progress-bar progress-bar-striped progress-bar-animated" id="${type}" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">${type+'!'}</div>
+            </div>
+            `)
+            startPowerUpBar(type, duration);
+            return;
+        }
+        $('#'+type).closest('.progress').show();
+        startPowerUpBar(type, duration);
+    })
+
     socket.on('PlayerDead', () => {
         console.log('Morto')
         socket.emit('Restart');
@@ -137,6 +174,18 @@ document.addEventListener('keydown', function(event) {
             break;
         case 83: // S
             movement = 'down';
+            break;
+        case 38:
+            movement = 'up';
+            break;
+        case 39:
+            movement = 'right';
+            break;
+        case 40:
+            movement = 'down';
+            break;
+        case 37:
+            movement = 'left';
             break;
     }
 
