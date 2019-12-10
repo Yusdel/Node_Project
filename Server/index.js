@@ -1,28 +1,17 @@
-const app = require('express')();
-const http = require('http').createServer(app);
-const io = require('socket.io')(http);
-const Snake = require('./../Game/ServerEngine');
+const process = require('child_process');
 
-Snake.Engine(io.of('/Room-1'));
-Snake.Engine(io.of('/Room-2'));
-Snake.Engine(io.of('/Room-3'));
-Snake.Engine(io.of('/Room-4'));
-Snake.Engine(io.of('/Room-5'));
+console.log('Processo padre avviato');
 
-app.get('/', function(req, res){
-    res.sendFile(process.cwd() + '/Client/GamePage.html');
-});
+StartProcess = (path, timeToRestart) => {
 
-app.get('/Game/ClientEngine.js', function(req, res){
-    res.sendFile(process.cwd() + '/Game/ClientEngine.js');
-});
+    child = process.fork(path);
+    
+    child.on('close', (code)=>{
+        console.log(code);
+        if (!(timeToRestart === undefined))
+            setTimeout(() => StartProcess(child.spawnargs[1], timeToRestart), timeToRestart)
+    })
 
-app.get('/Game/Engine.js', function(req, res){
-    res.sendFile(process.cwd() + '/Game/Engine.js');
-});
+}
 
-
-
-http.listen(7777, function(){
-    console.log('Server up on * :', http.address().port);
-});
+StartProcess('./Server/Snake.js', 2000);

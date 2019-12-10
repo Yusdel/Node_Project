@@ -296,13 +296,13 @@ module.exports.Engine = Engine = function (io){
 
     });
 
-    const Debugger = setInterval(() => {
-        let s = "" + io.name + "\n";
-        s += '__Object: ' + __OBJECTS.length + "\n"
-        s += '__SolidObject: ' + __SolidObjects.length + "\n"
-        s += 'Total Players: ' + Players.length + "\n"
-        console.log(s);
-    }, 7000)
+    // const Debugger = setInterval(() => {
+    //     let s = "" + io.name + "\n";
+    //     s += '__Object: ' + __OBJECTS.length + "\n"
+    //     s += '__SolidObject: ' + __SolidObjects.length + "\n"
+    //     s += 'Total Players: ' + Players.length + "\n"
+    //     console.log(s);
+    // }, 7000)
 
     const Cicle = setInterval(() => {
 
