@@ -151,6 +151,11 @@ $(document).ready(() => {
         startPowerUpBar(type, duration);
     })
 
+    socket.on('FullRoom', () => {
+        alert('Stanza piena');
+        window.location.replace("/");
+    })
+
     socket.on('PlayerDead', () => {
         console.log('Morto')
         socket.emit('Restart');

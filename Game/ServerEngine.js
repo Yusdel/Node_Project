@@ -2,7 +2,7 @@ module.exports.Engine = Engine = function (io){
 
     const __OBJECTS = [];
     const __SolidObjects = [];
-    const __ServerTick = 2;
+    const __ServerTick = 10;
 
     const GameObject = function (x, y, width, height, solid) {
 
@@ -131,14 +131,15 @@ module.exports.Engine = Engine = function (io){
                 element.Destroy();
             });
             this.Destroy();
+            this.Start.Occupated = false;
         }
 
         this.Reset = function(){
             __SolidObjects.push(this);
             this.Body = [];
             this.MaxLength = 3;
-            this.Position.x = PlayersStartPos[this.PlayerN].x;
-            this.Position.y = PlayersStartPos[this.PlayerN].y;
+            this.Position.x = this.Start.x;
+            this.Position.y = this.Start.y;
             this.Movement.Type = undefined;
             this.Dead = false;
         }
@@ -194,9 +195,20 @@ module.exports.Engine = Engine = function (io){
 
         // Region -   -   -   -   -   -   -   -
         
-        let player = new PlayerObject (0, 0, 20, 20);
-        player.Position.x = PlayersStartPos[player.PlayerN].x;
-        player.Position.y = PlayersStartPos[player.PlayerN].y;
+        let player = {};
+        let canStart = !PlayersStartPos.every(start => {
+            if (start.Occupated) return true;
+            player = new PlayerObject (0, 0, 20, 20);
+            player.Start = start;
+            start.Occupated = true;
+            return false;
+        })
+        if (!canStart) {
+            socket.emit('FullRoom');
+            return;
+        }
+        player.Position.x = player.Start.x;
+        player.Position.y = player.Start.y;
         player.SendDead = () => socket.emit('PlayerDead');
         player.SendPosition = () => {
             if (player != undefined && !player.Dead){
@@ -284,14 +296,19 @@ module.exports.Engine = Engine = function (io){
 
     });
 
+    const Debugger = setInterval(() => {
+        let s = "" + io.name + "\n";
+        s += '__Object: ' + __OBJECTS.length + "\n"
+        s += '__SolidObject: ' + __SolidObjects.length + "\n"
+        s += 'Total Players: ' + Players.length + "\n"
+        console.log(s);
+    }, 7000)
 
-    
-    // TODO     Risolvere problemi con refresh pagina che disconnette tipo tutti
     const Cicle = setInterval(() => {
 
         // Region -   -   -   -   -   -   -   -
 
-        let DeadPlayer = []                 // On collide controll first see who die and then kill
+        let DeadPlayer = []
         Players.every( player => {
             
             player.SendOtherPlayers();
@@ -316,17 +333,13 @@ module.exports.Engine = Engine = function (io){
                     return true;
                 }
                 if(player.ObjCollided.Name == 'PowerUp'){
-                    switch(player.ObjCollided.Type){
-                        case PowerUpTypes[0]:
-                            player.ObjCollided.Type.Effect(player)
-                            break;
-                        case PowerUpTypes[1]:
-                            player.ObjCollided.Type.Effect(player)
-                            break;
-                        case PowerUpTypes[2]:
-                            player.ObjCollided.Type.Effect(player)
-                            break;
-                    }
+                    PowerUpTypes.every(POW => {
+                        if (player.ObjCollided.Type == POW){
+                            POW.Effect(player);
+                            return false;
+                        }
+                        return true;
+                    })
                     player.SendPowerUpType(player.ObjCollided.Type.Name, player.ObjCollided.Type.Durate);
                     player.ObjCollided.Destroy();
                     setTimeout(GeneratePowerUp, PowerUpCooldown);
