@@ -26,6 +26,14 @@
             width: 70%;
         }
 
+        #Score{
+            height: auto; 
+            min-height: 250px; 
+            border-radius: 10px;
+            box-shadow: 5px 5px 20px gray;
+            background-color: rgba(150, 86, 214, 0.3);
+        }
+
         #Apple_Triplicated {
             background-color: rgb(221, 0, 92);
         }
@@ -40,8 +48,10 @@
     <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
 </head>
 <body>
+    
     <div class="container-fluid">
 
         <div class="row">
@@ -53,6 +63,8 @@
         <div class="row mx-2 my-4">
             <div class="col d-flex justify-content-center">
                 <canvas id="GameCanvas" height="500px" width="1000px" style="border: 2px solid black; margin: 5px;"></canvas>
+            </div>
+            <div class="col-2 mx-3 p-3 align-self-end align-self-center" id="Score">
             </div>
         </div>
 

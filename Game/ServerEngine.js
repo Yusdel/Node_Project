@@ -82,6 +82,9 @@ module.exports.Engine = Engine = function (io){
         Players.push(this);
         this.Arrays.push(Players);
 
+        this.Name = 'Player';
+        this.Score = 0;
+
         this.Movement = {
             Can : true,
             Type: undefined,
@@ -111,6 +114,8 @@ module.exports.Engine = Engine = function (io){
         this.MaxLength = 3;
         this.AddBody = function (position){
             let body = new GameObject(position.x, position.y, 20, 20, true);
+            body.Name = 'Body';
+            body.PlayerRef = this;
             this.Body.push(body);
             if (this.Body.length > this.MaxLength){
                 this.Body.shift().Destroy();
@@ -255,6 +260,23 @@ module.exports.Engine = Engine = function (io){
             socket.emit('PowerUpTaken', type, duration);
         }
 
+        player.UpdateScore = (score) => {
+            player.Score += score;
+            if (player.Score < 0)
+                player.Score = 0;
+            SendAllScore();
+        }
+
+        socket.on('Nickname', nickname => {
+            let exist = !Players.every(x => {return x.Nickname !== nickname})
+            if (exist) {
+                socket.emit('NicknameExist');
+                socket.disconnect();
+            }
+            player.Nickname = nickname;
+            player.UpdateScore(0);
+        });
+
         socket.on('Movement', function(movement){
             switch(movement){
                 case Movements[0]:
@@ -304,6 +326,12 @@ module.exports.Engine = Engine = function (io){
     //     console.log(s);
     // }, 7000)
 
+    const SendAllScore = () => {
+        scores = [];
+        Players.forEach(player => scores.push({Nickname: player.Nickname, Score: player.Score}));
+        io.emit('UpdateScore', scores);
+    }
+
     const Cicle = setInterval(() => {
 
         // Region -   -   -   -   -   -   -   -
@@ -328,6 +356,7 @@ module.exports.Engine = Engine = function (io){
             if (player.Collide()){
                 if(player.ObjCollided.Name == 'Apple'){
                     player.ObjCollided.Destroy();
+                    player.UpdateScore(10 * player.Stretch);
                     GenerateApple();
                     player.MaxLength += player.Stretch;
                     return true;
@@ -346,11 +375,17 @@ module.exports.Engine = Engine = function (io){
                     return true;
                 }
                 DeadPlayer.push(player);
+                if (player.ObjCollided.Name === 'Player'){
+                    player.ObjCollided.UpdateScore(25 * player.MaxLength);
+                }
+                if (player.ObjCollided.Name === 'Body' && player.ObjCollided.PlayerRef !== player){
+                    player.ObjCollided.PlayerRef.UpdateScore(25 * player.MaxLength);
+                }
                 return true;
             }
             return true;
         })
-        DeadPlayer.forEach(player => {player.Die(); player.SendDead(); });
+        DeadPlayer.forEach(player => {player.Die(); player.UpdateScore(-100); player.SendDead(); });
 
         // End -   -   -   -   -   -   -   -
 

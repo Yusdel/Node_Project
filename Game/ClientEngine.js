@@ -1,11 +1,13 @@
+let url_string = window.location.href;
+let url = new URL(url_string);
 
-let GetParams = () => {
-    let url_string = window.location.href;
-    let url = new URL(url_string);
-    return url.searchParams.get("room");
+let GetParams = (param) => {
+    return url.searchParams.get(param);
 }
 
-var socket = io('/'+GetParams())//{transports: ['websocket'], upgrade: false});
+//history.replaceState(null, "", window.location.pathname);
+
+var socket = io('/'+GetParams('room'))
 socket.on('Connesso', (x) => console.log('Connesso ' + x))
 $(window).on("beforeunload", () => {
     socket.close();
@@ -13,7 +15,6 @@ $(window).on("beforeunload", () => {
 
 const MapWidth = 1000;
 const MapHeight = 500;
-//TODO      Costruire contenitore di oggetti da disegnare in modo tale che si aggiorna solo la posizione e vengono disegnati in una volta sola
 
 let GameObjectClient = function (x, y, width, height){
 
@@ -63,6 +64,12 @@ function ClearAll(){
 
 
 $(document).ready(() => {
+
+    let Nickname = GetParams('nickname');
+    console.log(Nickname)
+    if (!Nickname || Nickname.match(/^ *$/))
+        window.location.replace("/Gnente");
+    socket.emit('Nickname', Nickname);
     
     let Player_ = new GameObjectClient(0, 0, 20, 20);
     let Enemies_ = [];
@@ -151,14 +158,28 @@ $(document).ready(() => {
         startPowerUpBar(type, duration);
     })
 
-    socket.on('FullRoom', () => {
-        alert('Stanza piena');
-        window.location.replace("/");
-    })
-
     socket.on('PlayerDead', () => {
         console.log('Morto')
         socket.emit('Restart');
+    })
+
+    socket.on('NicknameExist', () => {
+        swal('Nickname esistente' , '' ,'error')
+        .then(() => window.location.replace('/'))
+    })
+
+    socket.on('FullRoom', () => {
+        swal('Stanza piena' , '' ,'error')
+        .then(() => window.location.replace('/'))
+    })
+
+    socket.on('UpdateScore', (scores) => {
+        scores.sort(function(a, b){return b.Score - a.Score});
+        s = '';
+        scores.forEach(score => {
+            s += score.Nickname + '<br>' + score.Score + '<br>';
+        })
+        $('#Score').html(s)
     })
     
 })
