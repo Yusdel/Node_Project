@@ -91,6 +91,7 @@ $(document).ready(() => {
     socket.emit('Nickname', Nickname);
     
     let Enemies_ = [];
+    let Walls_ = [];
 
     setInterval(() => {
         ClearAll();
@@ -98,6 +99,7 @@ $(document).ready(() => {
         Apple_.Draw();
         if (PowerUp_.Position) PowerUp_.Draw();
         Enemies_.forEach(enemy => enemy.Draw());
+        Walls_.forEach(wall => wall.Draw());
     }, 10)
 
     socket.on('PlayerPosition', (serverPos, serverBodyPos) => {
@@ -132,6 +134,21 @@ $(document).ready(() => {
         
         PowerUp_.RefreshObjPos(powerUp[0])
 
+    })
+
+    socket.on('Walls', (walls) => {
+        
+        let newWallCount = walls.length - Walls_.length;
+        if (newWallCount < 0)
+            Walls_.splice(0, -newWallCount);
+        for (let i = 0; i < newWallCount; i++){
+            let wall = new GameObjectClient(0, 0, Scale, Scale);
+            wall.Color = 'rgb(103, 107, 104)';
+            Walls_.push(wall);
+        }
+        for (let i = 0; i < Walls_.length; i++){
+            Walls_[i].RefreshObjPos(walls[i]);
+        }
     })
 
     const PowerUpActived = [];

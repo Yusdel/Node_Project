@@ -65,6 +65,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     ];
     const Apples = [];
     const PowerUps = [];
+    const Walls = [];
 
     let Wall = new GameObject(-2, 0, 1, MapHeight, true)
     Wall.Name = 'left'
@@ -151,32 +152,58 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
 
     }
 
-    let GenerateRandomPosition = function (){
-        let x = Math.floor(Math.random() * (MapWidth / Config.Scale));
-        let y = Math.floor(Math.random() * (MapHeight / Config.Scale));
+    let GenerateRandomPosition = function (arrOutside, radius){
+        let ok = false;
+        let x, y;
+        let maxCount = 0;
+        while(!ok){
+            let continua = false;
+            x = Math.floor(Math.random() * (MapWidth / Config.Scale));
+            y = Math.floor(Math.random() * (MapHeight / Config.Scale));
+            maxCount++;
+            if (maxCount >= 100) break;
+            PlayersStartPos.forEach(start => {if (start.x === x && start.y === y) continua = true})
+            if (continua) continue;
+            if (!radius && !arrOutside) break;
+            if (!radius) radius = 1;
+            let dx, dy;
+            ok = arrOutside.every(obj => {
+                dx = Math.abs(x - obj.Position.x / Config.Scale)
+                dy = Math.abs(y - obj.Position.y / Config.Scale)
+                //console.log(dx+"   "+dy)
+                if (dx < radius) return false;
+                if (dy < radius) return false;
+                return true;
+            })
+        }
         let obj = new GameObject(x*Config.Scale, y*Config.Scale, Config.Scale,Config.Scale, true);
         return obj;
     }
 
     let GenerateApple = function (){
-        apple = GenerateRandomPosition();
+        apple = GenerateRandomPosition(__SolidObjects);
         Apples.push(apple);
         apple.Arrays.push(Apples);
         apple.Name = 'Apple';
     }
 
     const PowerUpTypes = [
-        {Name : 'Apple_Triplicated', Durate : 16000, Probability : 20, Effect : function (player) {
+        {Name : 'Apple_Triplicated', Durate : 12000, Probability : 30, Effect : function (player) {
             player.Stretch += 2;
             setTimeout(() => player.Stretch -= 2, this.Durate);
         }}, 
-        {Name : 'Faster', Durate : 10000, Probability : 20, Effect : function (player) {
+        {Name : 'Faster', Durate : 7000, Probability : 30, Effect : function (player) {
             player.Movement.Cooldown -= 25;
             setTimeout(() => player.Movement.Cooldown += 25, this.Durate);
         }}, 
-        {Name : 'Slower', Durate : 3000, Probability : 60,Effect : function (player) {
+        {Name : 'Slower', Durate : 7000, Probability : 30, Effect : function (player) {
             player.Movement.Cooldown += 25;
             setTimeout(() => player.Movement.Cooldown -= 25, this.Durate);
+        }},
+        {Name : 'Walls', Durate : 25000, Probability : 10, Effect : function () {
+            let walls = []
+            for (let i = 0; i < 25; i++) walls.push(GenerateWall(5));
+            setTimeout(() => {for (let i = walls.length-1; i >= 0; i--) walls[i].Destroy()}, this.Durate)
         }}
     ]
     let indexProbability = PowerUpTypes.map((Pow, i) => {
@@ -185,11 +212,19 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     const PowerUpCooldown = 6000;
 
     let GeneratePowerUp = function(){
-        powerUp = GenerateRandomPosition();
+        powerUp = GenerateRandomPosition(__SolidObjects);
         PowerUps.push(powerUp);
         powerUp.Arrays.push(PowerUps);
         powerUp.Name = 'PowerUp';
         powerUp.Type = PowerUpTypes[indexProbability[Math.floor(Math.random()*indexProbability.length)]]
+    }
+
+    let GenerateWall = function(radiusFromPlayer){
+        wall = GenerateRandomPosition(Players, radiusFromPlayer)
+        Walls.push(wall);
+        wall.Arrays.push(Walls);
+        wall.Name = 'Wall';
+        return wall;
     }
 
     GenerateApple();
@@ -265,6 +300,12 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         }
         player.SendPowerUpType = (type, duration) => {
             socket.emit('PowerUpTaken', type, duration);
+        }
+
+        player.SendWalls = () => {
+            let walls = []
+            Walls.forEach(wall => walls.push(wall.Position))
+            socket.emit('Walls', walls)
         }
 
         player.UpdateScore = (score) => {
@@ -349,6 +390,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
             player.SendOtherPlayers();
             player.SendApples();
             player.SendPowerUps();
+            player.SendWalls();
 
             if (player.Dead)
                 return true;
