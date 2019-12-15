@@ -16,11 +16,22 @@ $(window).on("beforeunload", () => {
 
 let MapWidth;
 let MapHeight;
+let Scale = 0;
+let Player_;
+let Apple_;
+let PowerUp_;
 $.get(Host+'/Info/Config')
     .done(res => {
         MapWidth = res.MapWidth;
         MapHeight = res.MapHeight;
-        $('#GameBox').html(`<canvas id="GameCanvas" height="${MapHeight}px" width="${MapWidth}px" style="border: 2px solid black; margin: 5px;"></canvas>`)
+        $('#GameBox').html(`<canvas id="GameCanvas" height="${MapHeight}px" width="${MapWidth}px" style="border: 2px solid black; margin: 5px;"></canvas>`);
+        Scale = res.Scale;
+        Player_ = new GameObjectClient(0, 0, Scale, Scale);
+        Apple_ = new GameObjectClient(0,0,Scale,Scale);
+        PowerUp_ = new GameObjectClient(0,0,Scale,Scale);
+        PowerUp_.Color = 'rgb(222, 215, 22)';
+        Apple_.Color = 'rgb(250, 11, 2)';
+        Player_.Color = 'rgb(116, 52, 235)';
     })
 
 
@@ -53,7 +64,7 @@ let GameObjectClient = function (x, y, width, height){
             this.ObjConnectedToDraw.splice(0, -newObjsCount)
 
         for (let i = 0; i < newObjsCount; i++){
-            let objConnected = new GameObjectClient(0, 0, 20, 20);
+            let objConnected = new GameObjectClient(0, 0, Scale, Scale);
             objConnected.Color = otherObjsColor;
             this.ObjConnectedToDraw.push(objConnected);
         }
@@ -79,13 +90,7 @@ $(document).ready(() => {
         window.location.assign("/Hub");
     socket.emit('Nickname', Nickname);
     
-    let Player_ = new GameObjectClient(0, 0, 20, 20);
     let Enemies_ = [];
-    let Apple_ = new GameObjectClient(0,0,20,20);
-    let PowerUp_ = new GameObjectClient(0,0,20,20);
-    PowerUp_.Color = 'rgb(222, 215, 22)';
-    Apple_.Color = 'rgb(250, 11, 2)';
-    Player_.Color = 'rgb(116, 52, 235)';
 
     setInterval(() => {
         ClearAll();
@@ -107,7 +112,7 @@ $(document).ready(() => {
         if (newEnemiesCount < 0)
             Enemies_.splice(0, -newEnemiesCount)
         for (let i = 0; i < newEnemiesCount; i++){
-            let enemy = new GameObjectClient(0, 0, 20, 20);
+            let enemy = new GameObjectClient(0, 0, Scale, Scale);
             enemy.Color = 'rgb(23, 31, 189)';
             Enemies_.push(enemy);
         }

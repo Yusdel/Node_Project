@@ -59,9 +59,9 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     const Players = [];
     const PlayersStartPos = [
         {x : 0, y : 0},
-        {x : 0, y : MapHeight - 20},
-        {x : MapWidth - 20, y : MapHeight - 20},
-        {x : MapWidth - 20, y : 0},
+        {x : 0, y : MapHeight - Config.Scale},
+        {x : MapWidth - Config.Scale, y : MapHeight - Config.Scale},
+        {x : MapWidth - Config.Scale, y : 0},
     ];
     const Apples = [];
     const PowerUps = [];
@@ -89,7 +89,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
             Can : true,
             Type: undefined,
             Cooldown : 75,
-            Speed : 20          //pixel per tick
+            Speed : Config.Scale          //pixel per tick
         }
         this.Move = function(movement){
             switch(movement){
@@ -113,7 +113,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         this.Body = [];
         this.MaxLength = 3;
         this.AddBody = function (position){
-            let body = new GameObject(position.x, position.y, 20, 20, true);
+            let body = new GameObject(position.x, position.y, Config.Scale, Config.Scale, true);
             body.Name = 'Body';
             body.PlayerRef = this;
             this.Body.push(body);
@@ -152,9 +152,9 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     }
 
     let GenerateRandomPosition = function (){
-        let x = Math.floor(Math.random() * (MapWidth / 20));
-        let y = Math.floor(Math.random() * (MapHeight / 20));
-        let obj = new GameObject(x*20, y*20, 20,20, true);
+        let x = Math.floor(Math.random() * (MapWidth / Config.Scale));
+        let y = Math.floor(Math.random() * (MapHeight / Config.Scale));
+        let obj = new GameObject(x*Config.Scale, y*Config.Scale, Config.Scale,Config.Scale, true);
         return obj;
     }
 
@@ -166,19 +166,22 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     }
 
     const PowerUpTypes = [
-        {Name : 'Apple_Triplicated', Durate : 16000, Effect : function (player) {
+        {Name : 'Apple_Triplicated', Durate : 16000, Probability : 20, Effect : function (player) {
             player.Stretch += 2;
             setTimeout(() => player.Stretch -= 2, this.Durate);
         }}, 
-        {Name : 'Faster', Durate : 10000, Effect : function (player) {
+        {Name : 'Faster', Durate : 10000, Probability : 20, Effect : function (player) {
             player.Movement.Cooldown -= 25;
             setTimeout(() => player.Movement.Cooldown += 25, this.Durate);
         }}, 
-        {Name : 'Slower', Durate : 3000, Effect : function (player) {
+        {Name : 'Slower', Durate : 3000, Probability : 60,Effect : function (player) {
             player.Movement.Cooldown += 25;
             setTimeout(() => player.Movement.Cooldown -= 25, this.Durate);
         }}
     ]
+    let indexProbability = PowerUpTypes.map((Pow, i) => {
+        if (Pow.Probability) return Array(Math.round(Pow.Probability)).fill(i)
+    }).reduce((arrRes, currArr) => arrRes.concat(currArr), []);
     const PowerUpCooldown = 6000;
 
     let GeneratePowerUp = function(){
@@ -186,7 +189,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         PowerUps.push(powerUp);
         powerUp.Arrays.push(PowerUps);
         powerUp.Name = 'PowerUp';
-        powerUp.Type = PowerUpTypes[Math.floor(Math.random()*PowerUpTypes.length)]
+        powerUp.Type = PowerUpTypes[indexProbability[Math.floor(Math.random()*indexProbability.length)]]
     }
 
     GenerateApple();
@@ -207,7 +210,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         let player = {};
         let canStart = !PlayersStartPos.every(start => {
             if (start.Occupated) return true;
-            player = new PlayerObject (0, 0, 20, 20);
+            player = new PlayerObject (0, 0, Config.Scale, Config.Scale);
             player.Start = start;
             start.Occupated = true;
             return false;

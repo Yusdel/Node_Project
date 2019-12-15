@@ -50,6 +50,7 @@ app.get('/Info/Config', function(req, res){
     let config = {}
     config.MapWidth = GameConf.Config.MapWidth;
     config.MapHeight = GameConf.Config.MapHeight;
+    config.Scale = GameConf.Config.Scale;
     res.send(config);
 })
 

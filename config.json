@@ -18,7 +18,8 @@
             "Config": {
                 "ServerTick": 10,
                 "MapWidth": 1000,
-                "MapHeight": 660
+                "MapHeight": 650,
+                "Scale": 25
             }
         }
     ]
