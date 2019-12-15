@@ -1,0 +1,25 @@
+{
+    "MainHost": "http://localhost:1234",
+    "Games" : [
+        {
+            "Name": "Snake",
+            "Path": "Server/Snake.js",
+            "Host": "http://localhost:7777",
+            "Rooms": [
+                {
+                    "Name": "Room-1",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-2",
+                    "MaxPlayers": 3
+                }
+            ],
+            "Config": {
+                "ServerTick": 10,
+                "MapWidth": 1000,
+                "MapHeight": 660
+            }
+        }
+    ]
+}

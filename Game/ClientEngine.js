@@ -1,3 +1,4 @@
+const Host = window.location.protocol+'//'+window.location.host;
 let url_string = window.location.href;
 let url = new URL(url_string);
 
@@ -5,7 +6,7 @@ let GetParams = (param) => {
     return url.searchParams.get(param);
 }
 
-//history.replaceState(null, "", window.location.pathname);
+history.replaceState(null, "", window.location.pathname);
 
 var socket = io('/'+GetParams('room'))
 socket.on('Connesso', (x) => console.log('Connesso ' + x))
@@ -13,8 +14,16 @@ $(window).on("beforeunload", () => {
     socket.close();
 })
 
-const MapWidth = 1000;
-const MapHeight = 500;
+let MapWidth;
+let MapHeight;
+$.get(Host+'/Info/Config')
+    .done(res => {
+        MapWidth = res.MapWidth;
+        MapHeight = res.MapHeight;
+        $('#GameBox').html(`<canvas id="GameCanvas" height="${MapHeight}px" width="${MapWidth}px" style="border: 2px solid black; margin: 5px;"></canvas>`)
+    })
+
+
 
 let GameObjectClient = function (x, y, width, height){
 
@@ -66,9 +75,8 @@ function ClearAll(){
 $(document).ready(() => {
 
     let Nickname = GetParams('nickname');
-    console.log(Nickname)
     if (!Nickname || Nickname.match(/^ *$/))
-        window.location.replace("/Gnente");
+        window.location.assign("/Hub");
     socket.emit('Nickname', Nickname);
     
     let Player_ = new GameObjectClient(0, 0, 20, 20);
@@ -165,12 +173,12 @@ $(document).ready(() => {
 
     socket.on('NicknameExist', () => {
         swal('Nickname esistente' , '' ,'error')
-        .then(() => window.location.replace('/'))
+        .then(() => window.location.assign(GetParams('home')))
     })
 
     socket.on('FullRoom', () => {
         swal('Stanza piena' , '' ,'error')
-        .then(() => window.location.replace('/'))
+        .then(() => window.location.assign(GetParams('home')))
     })
 
     socket.on('UpdateScore', (scores) => {

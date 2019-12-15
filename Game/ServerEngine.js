@@ -1,8 +1,8 @@
-module.exports.Engine = Engine = function (io){
+module.exports.Engine = Engine = function (io, MaxPlayers, Config){
 
     const __OBJECTS = [];
     const __SolidObjects = [];
-    const __ServerTick = 10;
+    const __ServerTick = Config.ServerTick;
 
     const GameObject = function (x, y, width, height, solid) {
 
@@ -53,8 +53,8 @@ module.exports.Engine = Engine = function (io){
 
     // Region -   -   -   -   -   -   -   -
 
-    const MapWidth = 1000;
-    const MapHeight = 500;
+    const MapWidth = Config.MapWidth;
+    const MapHeight = Config.MapHeight;
     const Movements = ['up', 'right', 'down', 'left']
     const Players = [];
     const PlayersStartPos = [
@@ -200,6 +200,10 @@ module.exports.Engine = Engine = function (io){
 
         // Region -   -   -   -   -   -   -   -
         
+        if (Players.length >= MaxPlayers){
+            socket.emit('FullRoom');
+            return;
+        }
         let player = {};
         let canStart = !PlayersStartPos.every(start => {
             if (start.Occupated) return true;
@@ -396,5 +400,7 @@ module.exports.Engine = Engine = function (io){
             obj.Destroy();
         });
     }
+
+    this.PlayerNumber = () => Players.length;
 
 }
