@@ -29,7 +29,7 @@ $.get(Host+'/Info/Config')
         Player_ = new GameObjectClient(0, 0, Scale, Scale);
         Apple_ = new GameObjectClient(0,0,Scale,Scale);
         PowerUp_ = new GameObjectClient(0,0,Scale,Scale);
-        PowerUp_.Color = 'rgb(222, 215, 22)';
+        PowerUp_.Color = 'rgb(15, 122, 24)';
         Apple_.Color = 'rgb(250, 11, 2)';
         Player_.Color = 'rgb(116, 52, 235)';
     })
@@ -244,7 +244,8 @@ document.addEventListener('keydown', function(event) {
             movement = 'left';
             break;
     }
-
-    socket.emit('Movement', movement);
+    
+    if (movement !== '')
+        socket.emit('Movement', movement);
     
 });

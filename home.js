@@ -6,7 +6,7 @@ $(document).ready(() => {
         games.forEach(game => {
             $('#Menu').append(`
             <div class="btn-group dropright">
-                <button type="button" class="btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">${game.Name}</button>
+                <button type="button" class="GameButton btn btn-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">${game.Name}</button>
                 <div class="dropdown-menu" id="${game.Name}Menu"></div>
             </div>
             `)

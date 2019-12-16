@@ -146,6 +146,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
             this.MaxLength = 3;
             this.Position.x = this.Start.x;
             this.Position.y = this.Start.y;
+            this.Movement.NewType = undefined;
             this.Movement.Type = undefined;
             this.Dead = false;
         }
@@ -326,26 +327,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         });
 
         socket.on('Movement', function(movement){
-            switch(movement){
-                case Movements[0]:
-                    if (player.Movement.Type === Movements[2]) return;
-                    player.Movement.Type = Movements[0];
-                    break;
-                case Movements[1]:
-                    if (player.Movement.Type === Movements[3]) return;
-                    player.Movement.Type = Movements[1];
-                    break;
-                case Movements[2]:
-                    if (player.Movement.Type === Movements[0]) return;
-                    player.Movement.Type = Movements[2];
-                    break;
-                case Movements[3]:
-                    if (player.Movement.Type === Movements[1]) return;
-                    player.Movement.Type = Movements[3];
-                    break;
-            }
-            if (!player.Movement.Can)
-                return;
+            player.Movement.NewType = movement;
         });
 
         socket.on('Restart', function(){
@@ -397,7 +379,11 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
             
             player.SendPosition();
 
-            if(player.Movement.Can && player.Movement.Type != undefined && !player.Dead){
+            if(player.Movement.Can && !player.Dead && player.Movement.NewType){
+                if (player.Movement.NewType === Movements[0] && player.Movement.Type !== Movements[2]) player.Movement.Type = player.Movement.NewType;
+                if (player.Movement.NewType === Movements[1] && player.Movement.Type !== Movements[3]) player.Movement.Type = player.Movement.NewType;
+                if (player.Movement.NewType === Movements[2] && player.Movement.Type !== Movements[0]) player.Movement.Type = player.Movement.NewType;
+                if (player.Movement.NewType === Movements[3] && player.Movement.Type !== Movements[1]) player.Movement.Type = player.Movement.NewType;
                 player.AddBody(player.Position);
                 player.Move(player.Movement.Type);
             }

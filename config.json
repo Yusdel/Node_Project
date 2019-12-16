@@ -13,6 +13,22 @@
                 {
                     "Name": "Room-2",
                     "MaxPlayers": 3
+                },
+                {
+                    "Name": "Room-3",
+                    "MaxPlayers": 2
+                },
+                {
+                    "Name": "Room-4",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-5",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-6",
+                    "MaxPlayers": 4
                 }
             ],
             "Config": {
