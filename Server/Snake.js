@@ -5,7 +5,7 @@ const io = require('socket.io')(http);
 const Snake = require('./../Game/ServerEngine');
 const config = require(__MainDir + '/config.json');
 
-const GameConf = config.Games.find(x => x.Name == "Snake");
+const GameConf = config.Games.find(x => x.Name == "Snake_Online");
 const GamePort = (new URL(GameConf.Host)).port;
 const Rooms = GameConf.Rooms;
 
