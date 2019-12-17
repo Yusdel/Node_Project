@@ -14,19 +14,28 @@ $(document).ready(() => {
                 rooms.sort();
                 rooms.forEach(room => {
                     $(`#${game.Name}Menu`).append(`
-                    <a class="dropdown-item" onclick="NicknameInsert('${room.Name}')">${room.Name.replace('-', ' ')}<div>${room.Player}/${room.MaxPlayers}</div></a>
+                    <a class="dropdown-item" onclick="NicknameInsert('${game.Host}','${room.Name}')">${room.Name.replace('-', ' ')}<div>${room.Player}/${room.MaxPlayers}</div></a>
                     `)
-                });
+                })
+            }).fail(() => {
+                $(`#${game.Name}Menu`).append(`
+                    <a class="dropdown-item" onclick="NicknameInsert('${game.Host}')">Play</a>
+                    `)
             })
         })
     })
 })
 
-function NicknameInsert(link){
+function NicknameInsert(host, link){
     swal({text: "Inserisci il tuo Nickname", content: 'input'})
         .then(x=>{
             if (!x || x.match(/^ *$/)) return; 
-            window.location.assign(`http://localhost:7777/?room=${link}&nickname=${x}&home=${Host}`)
+            if (link){
+                window.location.assign(`${host}/?room=${link}&nickname=${x}&home=${Host}`)
+                return;
+            }
+            window.location.assign(`${host}/?nickname=${x}&home=${Host}`)
         })
 }
+
 

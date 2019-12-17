@@ -1,10 +1,10 @@
 {
-    "MainHost": "http://localhost:1234",
+    "MainHost": "http://172.20.211.41:1234",
     "Games" : [
         {
             "Name": "Snake_Online",
             "Path": "Server/Snake.js",
-            "Host": "http://localhost:7777",
+            "Host": "http://172.20.211.41:7777",
             "Rooms": [
                 {
                     "Name": "Room-1",

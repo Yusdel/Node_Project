@@ -207,7 +207,7 @@ $(document).ready(() => {
         scores.sort(function(a, b){return b.Score - a.Score});
         s = '';
         scores.forEach(score => {
-            s += score.Nickname + '<br>' + score.Score + '<br>';
+            s += score.Nickname + '<br>' + score.Score + '<br>' + 'Kill: ' + score.Kills + '<br><br>';
         })
         $('#Score').html(s)
     })
