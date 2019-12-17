@@ -87,6 +87,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
 
         this.Name = 'Player';
         this.Score = 0;
+        this.Kills = 0;
 
         this.Movement = {
             Can : true,
@@ -366,7 +367,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
 
     const SendAllScore = () => {
         scores = [];
-        Players.forEach(player => scores.push({Nickname: player.Nickname, Score: player.Score}));
+        Players.forEach(player => scores.push({Nickname: player.Nickname, Score: player.Score, Kills: player.Kills}));
         io.emit('UpdateScore', scores);
     }
 
@@ -438,9 +439,11 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
                 DeadPlayer.push(player);
                 if (player.ObjCollided.Name === 'Player'){
                     player.ObjCollided.UpdateScore(25 * player.MaxLength);
+                    player.ObjCollided.Kills++;
                 }
                 if (player.ObjCollided.Name === 'Body' && player.ObjCollided.PlayerRef !== player){
                     player.ObjCollided.PlayerRef.UpdateScore(25 * player.MaxLength);
+                    player.ObjCollided.PlayerRef.Kills++;
                 }
                 return true;
             }
