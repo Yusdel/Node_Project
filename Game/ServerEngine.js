@@ -188,24 +188,29 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     }
 
     const PowerUpTypes = [
-        {Name : 'Apple_Triplicated', Durate : 12000, Probability : 10, Effect : function (player) {
+        {Name : 'Apple_Triplicated', Durate : 12000, Probability : 30, Effect : function (player) {
             player.Stretch += 2;
             setTimeout(() => player.Stretch -= 2, this.Durate);
         }}, 
-        {Name : 'Faster', Durate : 7000, Probability : 10, Effect : function (player) {
+        {Name : 'Faster', Durate : 7000, Probability : 30, Effect : function (player) {
             player.Movement.Cooldown -= 25;
             setTimeout(() => player.Movement.Cooldown += 25, this.Durate);
         }}, 
-        {Name : 'Slower', Durate : 7000, Probability : 10, Effect : function (player) {
+        {Name : 'Slower', Durate : 7000, Probability : 30, Effect : function (player) {
             player.Movement.Cooldown += 25;
             setTimeout(() => player.Movement.Cooldown -= 25, this.Durate);
         }},
-        {Name : 'Walls', Durate : 25000, Probability : 70, Effect : function () {
+        {Name : 'Walls', Durate : 25000, Probability : 10, WallNum : 25, Effect : function () {
             let walls = []
-            for (let i = 0; i < 25; i++) walls.push(GenerateWall(5));
+            for (let i = 0; i < this.WallNum; i++) walls.push(GenerateWall(5));
             setTimeout(() => {for (let i = walls.length-1; i >= 0; i--) walls[i].Destroy()}, this.Durate)
         }}
     ]
+    if (io.name == '/Room-4'){
+        PowerUpTypes[3].Durate = 30000;
+        PowerUpTypes[3].Probability = 250;
+        PowerUpTypes[3].WallNum = 50;
+    }
     let indexProbability = PowerUpTypes.map((Pow, i) => {
         if (Pow.Probability) return Array(Math.round(Pow.Probability)).fill(i)
     }).reduce((arrRes, currArr) => arrRes.concat(currArr), []);
