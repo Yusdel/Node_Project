@@ -163,7 +163,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
             y = Math.floor(Math.random() * (MapHeight / Config.Scale));
             maxCount++;
             if (maxCount >= 100) break;
-            PlayersStartPos.forEach(start => {if (start.x === x && start.y === y) continua = true})
+            PlayersStartPos.forEach(start => {if ((start.x / Config.Scale) == x && (start.y / Config.Scale) == y) continua = true})
             if (continua) continue;
             if (!radius && !arrOutside) break;
             if (!radius) radius = 1;
