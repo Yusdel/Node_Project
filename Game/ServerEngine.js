@@ -1,3 +1,5 @@
+const fs = require('fs')
+
 module.exports.Engine = Engine = function (io, MaxPlayers, Config){
 
     const __OBJECTS = [];
@@ -343,8 +345,10 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         socket.on('disconnect', () => {
 
         // Region -   -   -   -   -   -   -   -
-
+        let score = player.Score;
+        let nickname = player.Nickname;
         player.DestroyAll();
+        SaveScore(nickname, score)
 
         // End -   -   -   -   -   -   -   -
 
@@ -364,6 +368,24 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
         scores = [];
         Players.forEach(player => scores.push({Nickname: player.Nickname, Score: player.Score}));
         io.emit('UpdateScore', scores);
+    }
+
+    const SaveScore = (nickname, score) => {
+        let file = require(process.cwd() + '/Scores.json');
+        let roomScores = file.find(x => x.Room == io.name.replace('/', ''))
+        if (!roomScores){ 
+            roomScores = {Room: io.name.replace('/', ''), Scores : []};
+            file.push(roomScores)
+        }
+        let Score = roomScores.Scores.find(x => x.Nickname == nickname)
+        if (!Score){
+            Score = {Nickname : nickname, Score : score}
+            roomScores.Scores.push(Score)
+        }
+        if (Score.Score < score) Score.Score = score;
+        roomScores.Scores.sort((a, b)=>{return b.Score - a.Score})
+        if (roomScores.Scores.length > 10) roomScores.Scores.pop();
+        fs.writeFileSync(process.cwd() + '/Scores.json', JSON.stringify(file) , 'utf-8');
     }
 
     const Cicle = setInterval(() => {
