@@ -1,0 +1,42 @@
+{
+    "MainHost": "http://172.20.211.41:1234",
+    "Games" : [
+        {
+            "Name": "Snake_Online",
+            "Path": "Server/Snake.js",
+            "Host": "http://172.20.211.41:7777",
+            "Rooms": [
+                {
+                    "Name": "Room-1",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-2",
+                    "MaxPlayers": 3
+                },
+                {
+                    "Name": "Room-3",
+                    "MaxPlayers": 2
+                },
+                {
+                    "Name": "Room-4",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-5",
+                    "MaxPlayers": 4
+                },
+                {
+                    "Name": "Room-6",
+                    "MaxPlayers": 4
+                }
+            ],
+            "Config": {
+                "ServerTick": 10,
+                "MapWidth": 1000,
+                "MapHeight": 660,
+                "Scale": 20
+            }
+        }
+    ]
+}
