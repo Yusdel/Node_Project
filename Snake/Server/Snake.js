@@ -1,4 +1,5 @@
 const __MainDir = process.cwd()
+const fs = require('fs')
 const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
@@ -8,6 +9,12 @@ const config = require(__MainDir + '/config.json');
 const GameConf = config.Games.find(x => x.Name == "Snake_Online");
 const GamePort = (new URL(GameConf.Host)).port;
 const Rooms = GameConf.Rooms;
+
+try {
+    require(process.cwd() + '/Snake/Scores.json')
+} catch (error) {
+    fs.writeFileSync(process.cwd() + '/Snake/Scores.json', JSON.stringify([]) , 'utf-8');
+}
 
 Rooms.forEach(x => x.Engine = new Snake.Engine(io.of(x.Name), x.MaxPlayers, GameConf.Config));
 

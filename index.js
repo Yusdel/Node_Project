@@ -53,8 +53,9 @@ app.get('/Info', function(req, res){
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
 
+    let dati = [];
     for (i in config.Games) {
-        dati.push({Nome: config.Games[i].Name ,Host: config.Games[i].Host}) 
+        dati.push({Name: config.Games[i].Name ,Host: config.Games[i].Host}) 
     }
          
     res.send(dati);

@@ -6,7 +6,6 @@ function StringScore(scoreArray){
     scoreArray.forEach(score => {
         s += score.Nickname + '<br>Score: ' + score.Score + '<br><br>';
     })
-    console.log(s)
     return s;
 }
 
@@ -22,7 +21,6 @@ $(document).ready(() => {
             </div>
             `)
             $.get(game.Host+'/Info/Scores').done(score => {
-                console.log(score)
                 score.forEach(room => {
                     let accordion = $('#accordion');
                     if (room.Room){
@@ -72,13 +70,21 @@ $(document).ready(() => {
 
 function NicknameInsert(host, link){
     swal({text: "Inserisci il tuo Nickname", content: 'input'})
-        .then(x=>{
-            if (!x || x.match(/^ *$/)) return; 
-            if (link){
-                window.location.assign(`${host}/?room=${link}&nickname=${x}&home=${Host}`)
-                return;
-            }
-            window.location.assign(`${host}/?nickname=${x}&home=${Host}`)
+        .then(user => {
+            if (!user || user.match(/^ *$/)) return;
+            swal({text: "Inserisci la tua Password", content: {element: "input", attributes: {type: "password",}}})
+                .then(pass => {
+                    if (!pass || pass.match(/^ *$/)) return;
+                    $.get(Host + `/Login/${user}/${pass}`)
+                        .done(() => {
+                            if (link){
+                                window.location.assign(`${host}/?room=${link}&nickname=${user}&home=${Host}`)
+                                return;
+                            }
+                            window.location.assign(`${host}/?nickname=${user}&home=${Host}`)
+                        })
+                        .fail(() => swal({title: "Credenziali errate", icon: "error"}))
+                })
         })
 }
 
