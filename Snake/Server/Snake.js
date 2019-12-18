@@ -2,7 +2,7 @@ const __MainDir = process.cwd()
 const app = require('express')();
 const http = require('http').createServer(app);
 const io = require('socket.io')(http);
-const Snake = require('./../Game/ServerEngine');
+const Snake = require(__MainDir + '/Snake/Game/ServerEngine');
 const config = require(__MainDir + '/config.json');
 
 const GameConf = config.Games.find(x => x.Name == "Snake_Online");
@@ -12,7 +12,7 @@ const Rooms = GameConf.Rooms;
 Rooms.forEach(x => x.Engine = new Snake.Engine(io.of(x.Name), x.MaxPlayers, GameConf.Config));
 
 app.get('/', function(req, res){
-    res.sendFile(__MainDir + '/Client/GamePage.html');
+    res.sendFile(__MainDir + '/Snake/Client/GamePage.html');
 });
 
 app.get('/Hub', function(req, res){
@@ -20,7 +20,7 @@ app.get('/Hub', function(req, res){
 });
 
 app.get('/Game/ClientEngine.js', function(req, res){
-    res.sendFile(__MainDir + '/Game/ClientEngine.js');
+    res.sendFile(__MainDir + '/Snake/Game/ClientEngine.js');
 });
 
 app.get('/Info/Rooms', function(req, res){

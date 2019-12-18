@@ -3,7 +3,7 @@
     "Games" : [
         {
             "Name": "Snake_Online",
-            "Path": "Server/Snake.js",
+            "Path": "Snake/Server/Snake.js",
             "Host": "http://172.20.211.41:7777",
             "Rooms": [
                 {
