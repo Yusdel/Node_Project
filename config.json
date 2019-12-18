@@ -37,6 +37,11 @@
                 "MapHeight": 660,
                 "Scale": 20
             }
+        },
+        {
+            "Name": "Asteroid",
+            "Path": "Asteroid/bin/www",
+            "Host": "http://172.20.211.41:3000"
         }
     ]
 }
