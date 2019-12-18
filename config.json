@@ -43,5 +43,6 @@
             "Path": "Asteroid/bin/www",
             "Host": "http://localhost:3000"
         }
-    ]
+    ],
+    "Enable_Auto_Registration" : false
 }
