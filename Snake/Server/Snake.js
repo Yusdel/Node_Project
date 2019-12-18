@@ -23,6 +23,14 @@ app.get('/Game/ClientEngine.js', function(req, res){
     res.sendFile(__MainDir + '/Snake/Game/ClientEngine.js');
 });
 
+app.get('/Info/Scores', function(req, res){
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+
+    let score = require(__MainDir + '/Snake/Scores.json')
+    res.send(score);
+});
+
 app.get('/Info/Rooms', function(req, res){
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
