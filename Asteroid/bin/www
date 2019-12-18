@@ -1,0 +1,695 @@
+#!/usr/bin/env node
+/**
+ * Module dependencies.
+ * https://www.it-swarm.net/it/javascript/converte-array-di-stringhe-di-oggetti-json-array-di-oggetti-js/1067565978/
+ */
+var app = require('../app');
+var debug = require('debug')('snake-app:server');
+var server = require('http').Server(app);
+//var io = require('socket.io')(server);
+
+/**
+ * Get port from environment and store in Express.
+ */
+
+var port = normalizePort(process.env.PORT || '3000');
+app.set('port', port);
+
+/**
+ * Create HTTP server.
+ */
+
+//var server = http.createServer(app);
+
+var io = require('socket.io').listen(server);
+
+/**
+ * Listen on provided port, on all network interfaces.
+ */
+
+server.listen(port);
+
+/**************GAME SESSION VARIABLE AND FUNCTION*******************************/
+let userInput_server = {};
+let delElement = [];
+let delBullet = [];
+let uniq = [];
+let playersGaming = [];
+//Function RANDOM floor between MIN and MAX
+function getRandomNumber(min,max){
+  return Math.floor(Math.random()*(max-min)+min);
+}
+
+//variabili dimensioni canvas per collisione function
+let innerWidth = 1000;
+let innerHeight = 500;
+let clients = 0;
+
+// Tipi di animazione
+const AnimationType = {
+  NONE: 0,
+  LINEAR: 1,
+  KEYBOARD_RIGHT: 2,
+  KEYBOARD_LEFT: 3,
+};
+
+//Tipi di Oggetti
+const ObjectType = {
+  BACKGROUND: 'background',
+  CIRCLE: 'circle',
+  RECTANGLE: 'rectangle',
+  TEXT: 'text',
+  PLAYER: 'player',
+  BULLET: 'bullet',
+};
+
+//Area dove disegnare (così da poter suddividere la tela)
+function Arena(w, h) {
+  this.w = w;
+  this.h = h;
+  this.gameObjects = [];  //sposto l'array 'players'
+}
+
+const arena = new Arena(innerWidth, innerHeight);
+
+//Metodo per 'aggiungere' oggetti all'array players
+Arena.prototype.addObject = function (obj) {
+  this.gameObjects.push(obj);
+}
+
+//definisco i tipi di oggetti da disegnare (Sprite = prototipo)
+function SpriteBackground(x, y, w, h, fillColor) {
+  this.type = ObjectType.BACKGROUND;
+  // x e y sempre riferiti all'angolo in alto a sinistra
+  this.x = x;
+  this.y = y;
+  // dimensioni
+  this.w = w;
+  this.h = h;
+  this.fillColor = fillColor == null ? null : fillColor;
+  this.animationType = AnimationType.NONE;
+  this.alpha = 1;
+}
+
+function SpriteCircle(x, y, radius, color, fillColor, deltaX, deltaY) {
+  this.type = ObjectType.CIRCLE;
+  //posizione
+  this.x = x;
+  this.y = y;
+  //grandezza
+  this.radius = radius;
+  //colore
+  this.color = color == null ? null : color;
+  this.fillColor = fillColor == null ? null : fillColor;
+  //velocita animazione
+  this.deltaX = deltaX == null ? 0 : deltaX;
+  this.deltaY = deltaY == null ? 0 : deltaY;
+  this.animationType = (this.deltaX !== 0 || this.deltaY !== 0) ? AnimationType.LINEAR : AnimationType.NONE;
+  this.startAngle = 0;
+  this.endAngle = Math.PI * 2;
+  this.alpha = 1;
+}
+
+function SpriteRect(x, y, w, h, color, fillColor, deltaX, deltaY) {
+  this.type = ObjectType.RECTANGLE;
+  //posizione
+  this.x = x;
+  this.y = y;
+  //grandezza
+  this.w = w;
+  this.h = h;
+  //colore
+  this.color = color == null ? null : color;
+  this.fillColor = fillColor == null ? null : fillColor;
+  this.deltaX = deltaX == null ? 0 : deltaX;
+  this.deltaY = deltaY == null ? 0 : deltaY;
+  this.animationType = (this.deltaX !== 0 || this.deltaY !== 0) ? AnimationType.LINEAR : AnimationType.NONE;
+  this.alpha = 1;
+}
+
+function SpritePlayer(x, y, radius, color, fillColor, deltaX, deltaY, idClient) {
+  this.type = ObjectType.PLAYER;
+  //posizione
+  this.x = x;
+  this.y = y;
+  //grandezza
+  this.radius = radius;
+  //colore
+  this.color = color == null ? null : color;
+  this.fillColor = fillColor == null ? null : fillColor;
+  //velocita animazione
+  this.deltaX = deltaX == null ? 0 : deltaX;
+  this.deltaY = deltaY == null ? 0 : deltaY;
+  this.animationType = AnimationType.KEYBOARD_RIGHT;
+  this.startAngle = 0;
+  this.endAngle = Math.PI * 2;
+  this.alpha = 1;
+
+  //ID_CLIENT
+  this.idClient = idClient;
+}
+
+function SpriteBullet(x, y, radius, color, fillColor, deltaX, deltaY) {
+  this.type = ObjectType.BULLET;
+  //posizione
+  this.x = x;
+  this.y = y;
+  //grandezza
+  this.radius = radius;
+  //colore
+  this.color = color == null ? null : color;
+  this.fillColor = fillColor == null ? null : fillColor;
+  //velocita animazione
+  this.deltaX = deltaX == null ? 0 : deltaX;
+  this.deltaY = deltaY == null ? 0 : deltaY;
+  this.animationType = (this.deltaX !== 0 || this.deltaY !== 0) ? AnimationType.LINEAR : AnimationType.NONE;
+  this.startAngle = 0;
+  this.endAngle = Math.PI * 2;
+  this.alpha = 1;
+}
+//FUNZIONI DI creazione tela
+function createObject(){
+  //Posizionamento nel Canvas/Arena casuale
+  const cx = getRandomNumber(250,750);
+  const cy = getRandomNumber(100,400);
+
+  const radius = 15;
+  arena.addObject(new SpriteBackground(0, 0, innerWidth, innerHeight, '#444'));
+
+  //aggiungo asteroidi casuali
+    for (let i = 0; i < 20; i++) {
+      const w2 = Math.random() * 30.0 + 5.0;
+      const h2 = Math.random() * 30.0 + 5.0;
+      /*Position*/
+      const x = getRandomNumber(250,750);
+      const y = getRandomNumber(100,400);
+      /*Color*/
+      const color = "red";
+      /*Velocity*/
+      const deltaX = (Math.random() - .5) * 6.0;
+      const deltaY = (Math.random() - .5) * 6.0;
+      let alpha = Math.random();
+      if (alpha < .2) alpha = .2;
+      if (alpha > .8) alpha = 1;
+      /*Random circle or rect*/
+      const t = Math.random();
+      if (t < .5) {
+        const circle = new SpriteCircle(x, y, w2, null, color, deltaX, deltaY);
+        circle.alpha = alpha;
+        arena.addObject(circle);
+      } else {
+        const rect = new SpriteRect(x, y, w2 * 2, h2 * 2, null, color, deltaX, deltaY);
+        rect.alpha = alpha;
+        arena.addObject(rect);
+      }
+    }
+
+  //Objects MOSSI DA TASTIERA
+  /*const velLeft = 3;  // deve essere un numero positivo
+  const circleKeyLeft = new SpriteCircle(cx + 50, cy, 20, null, '#fff', velLeft, velLeft);
+  //cambio il tipo di animazione
+  circleKeyLeft.animationType = AnimationType.KEYBOARD_LEFT;
+  arena.addObject(circleKeyLeft);*/
+
+  return arena.gameObjects;
+}
+function calcAngle(x1,y1,x2,y2) {
+  //angular coefficient
+  let m = (y2-y1)/(x2-x1);
+  console.log ("m: "+m);
+  return Math.atan(m) * 180 / Math.PI;
+}
+function createBullet(x, y, el){
+  /*
+   * Devono partire dalla pos del client
+   */
+
+   cosX = x - el.x;
+   cosY = -(y - el.y);
+   let rapporto;
+   if (cosX < 0) rapporto = -(cosY/cosX);
+   else rapporto = cosY/cosX;
+   console.log('Rapporto: ' + rapporto);
+   let deltaX, deltaY;
+   if (cosX < 0)  deltaX = -1;
+   else deltaX = 1;
+   deltaY = 1 * rapporto;
+   //console.log(deltaX, deltaY);
+
+
+   /*let angle = calcAngle(x,y,el.x,el.y);
+   console.log("angle: "+angle);
+   let deltaX = Math.sin(-angle);
+   let deltaY = Math.cos(-angle);
+
+   console.log("deltaX: "+deltaX);
+   console.log("deltaY: "+deltaY);*/
+
+   const posX = el.x;// + el.radius;
+   const posY = el.y;// + el.radius;
+   console.log(deltaX, deltaY)
+
+   //Disabled onclick event on button
+  //console.log(el);
+  const bullet = new SpriteBullet(posX, posY, 4, null, '#fff', deltaX, -deltaY);
+  /*
+  console.log(bullet.startAngle);
+  console.log("y: "+Math.sin(bullet.startAngle));
+  console.log("x: "+Math.cos(bullet.startAngle));*/
+  //console.log(angX+ " "+ angY);
+  bullet.animationType = AnimationType.LINEAR;
+  bullet.objectType = ObjectType.BULLET;
+  arena.addObject(bullet);
+}
+function createPlayer(idClient){
+
+  const cx = getRandomNumber(100,450);
+  const cy = getRandomNumber(100,450);
+
+  const radius = 15;
+  //aggiungo un cerchio VIOLA controllato dai tasti WDSA
+  const velRight = 3;  // deve essere un numero positivo
+  const player = new SpritePlayer(cx, cy, 20, null, '#fff', velRight, velRight, idClient);
+  //cambio il tipo di animazione
+  //player.animationType = AnimationType.KEYBOARD_RIGHT;
+  arena.addObject(player);
+  playersGaming.push(player);
+}
+
+//function DESTROYER OBJECT COLLIDED
+function Destroyer(){
+  uniq = DeleteDuplicate(delElement);
+  uniq.forEach(el => {
+    arena.gameObjects.splice(el, 1);
+  })
+
+  uniq = [];
+  delElement = [];
+  /*
+  var arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
+
+  for( var i = 0; i < arr.length; i++){
+     if ( arr[i] === 5) {
+       arr.splice(i, 1);
+     }
+  }
+
+  //=> [1, 2, 3, 4, 6, 7, 8, 9, 0]
+  */
+}
+function DestroyerBullet(el){
+  arena.gameObjects.splice(el,1);
+}
+//to Delete duplicate of Array Collided (only NUM and String NO Objects Array)
+function DeleteDuplicate(array){
+    return array.sort().filter(function(item, pos, ary) {
+        return !pos || item != ary[pos - 1];
+    })
+}
+//INCREMENTO LA POSIZIONE DEGLI OGGETTI con un foreach
+function updatePosition(){
+  arena.gameObjects.forEach(element => {
+    if (element.objectType === ObjectType.BULLET) {
+        //normale animazione
+        element.x += (element.deltaX/clients)*2.0;
+        element.y += (element.deltaY/clients)*2.0;
+    }
+    if(element.animationType === AnimationType.LINEAR){
+      element.x += element.deltaX/clients;
+      element.y += element.deltaY/clients;
+    }
+  })
+};
+function updatePositionPlayers(client_id){
+  arena.gameObjects.forEach(element => {
+    //gestisco lo spostamento da tastiera tramite i tasti cursore
+
+    if (element.animationType === AnimationType.KEYBOARD_LEFT)
+    {
+      const keyBoard = element.animationType === AnimationType.KEYBOARD_LEFT ? userInput_server.keyboardLeft : userInput_server.keyboardRight;
+        if (keyBoard.up)
+            element.y -= Math.abs(element.deltaY);
+        if (keyBoard.right)
+            element.x += Math.abs(element.deltaX);
+        if (keyBoard.down)
+            element.y += Math.abs(element.deltaY);
+        if (keyBoard.left)
+            element.x -= Math.abs(element.deltaX);
+    }
+    if(element.animationType === AnimationType.KEYBOARD_RIGHT && client_id == element.idClient)
+    {
+      const keyBoard = element.animationType === AnimationType.KEYBOARD_LEFT ? userInput_server.keyboardLeft : userInput_server.keyboardRight;
+        if (keyBoard.up)
+            element.y -= Math.abs(element.deltaY);
+        if (keyBoard.right)
+            element.x += Math.abs(element.deltaX);
+        if (keyBoard.down)
+            element.y += Math.abs(element.deltaY);
+        if (keyBoard.left)
+            element.x -= Math.abs(element.deltaX);
+    }
+  });
+}
+
+//TIPI DI Collisione ancora da correggere! NOT WORK!!!!!
+function ColliderCircle(circle1, circle2, i){
+  //var circle1 = {radius: 20, x: 5, y: 5};
+  //var circle2 = {radius: 12, x: 10, y: 5};
+  var dx = circle1.x - circle2.x;
+  var dy = circle1.y - circle2.y;
+  var distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance < circle1.radius + circle2.radius)
+  {
+    /*
+     * collision detected!
+     * Movimento di Collisione da Inserire
+     */
+
+     if(circle1.animationType == AnimationType.KEYBOARD_LEFT ||
+        circle1.animationType == AnimationType.KEYBOARD_RIGHT)
+        { delElement.push(i-1); }
+     if(circle2.animationType == AnimationType.KEYBOARD_LEFT ||
+        circle2.animationType == AnimationType.KEYBOARD_RIGHT)
+        { delElement.push(i-1); }
+  }
+
+}
+function ColliderRect(rect1, rect2){
+//var rect = {x: positonX, y: positionY, w: width, h: height}
+
+if (rect1.x + rect1.w/2 >= rect2.x &&
+    rect1.x <= rect2.x + rect2.w/2 &&
+    rect1.y + rect1.h/2 >= rect2.y &&
+    rect1.y <= rect2.y + rect2.h/2)
+  { /*collision detected*/
+      rect1.deltaX = -rect1.deltaX;
+      rect1.x += rect1.deltaX / 2;
+      rect1.deltaY = -rect1.deltaY;
+      rect1.Y += rect1.deltaY / 2;
+
+      rect2.deltaX = -rect2.deltaX;
+      rect2.x += rect2.deltaX / 2;
+      rect2.deltaY = -rect2.deltaY;
+      rect2.Y += rect2.deltaY / 2;
+  }
+
+// filling in the values =>
+// example
+/*if (5 < 30 &&
+    55 > 20 &&
+    5 < 20 &&
+    55 > 10) {
+    // collision detected!
+}*/
+}
+function ColliderMix(circle, rect){
+  /*
+   * If the circle is to the RIGHT of the square, check against the RIGHT edge.
+   * If the circle is to the LEFT of the square, check against the LEFT edge.
+   * If the circle is ABOVE the square, check against the TOP edge.
+   * If the circle is to the BELOW the square, check against the BOTTOM edge.
+   */
+   let testX = circle.x;
+   let testY = circle.y;
+
+   if (circle.x < rect.x)
+   {
+     testX = rect.x;  // left edge
+   }
+   else if (circle.x > rect.x+rect.w)
+   {
+     testX = rect.x+rect.w;  // right edge
+   }
+   else {/*Do Nothing*/}
+
+   if (circle.y < rect.y)
+   {
+     testY = rect.y;   // top edge
+   }
+   else if (circle.y > rect.y+rect.h)
+   {
+     testY = rect.y+rect.h; // bottom edge
+   }
+   else{/*Do Nothing*/}
+
+   let distX = circle.x-testX;
+   let distY = circle.y-testY;
+   let distance = Math.sqrt( (distX*distX) + (distY*distY) );
+
+   if (distance < circle.radius)
+   {
+     if(circle.animationType == AnimationType.KEYBOARD_LEFT || circle.animationType == AnimationType.KEYBOARD_RIGHT)
+     {
+        /*
+         * collide players
+         */
+         return true;
+     }
+     else
+     {
+       /*
+        * Position Movement
+        */
+        return false;
+     }
+   }
+   else {/*Do Nothing*/ return false;}
+
+  /*
+   * change color of object example
+   * if (hit) { fill(255,150,0); }
+   *
+   */
+}
+
+function Collision() {
+
+    /*
+     * verifico la collisione con i bordi
+     */
+    let bulDel = 0;
+    arena.gameObjects.forEach(element => {
+        switch (element.type) {
+          case ObjectType.RECTANGLE:
+            const w2 = element.w / 2;
+            const h2 = element.h / 2;
+            if (element.x - w2 < 0 || element.x + w2 > innerWidth) {
+              element.deltaX = -element.deltaX;
+              element.x += element.deltaX / 2;
+            }
+            if (element.y - h2 < 0 || element.y + h2 > innerHeight) {
+              element.deltaY = -element.deltaY;
+              element.Y += element.deltaY / 2;
+            }
+            break;
+
+          case ObjectType.CIRCLE:
+            if (element.x - element.radius < 0 || element.x + element.radius > innerWidth) {
+              element.deltaX = -element.deltaX;
+              element.x += element.deltaX / 2;
+            }
+            if (element.y - element.radius < 0 || element.y + element.radius > innerHeight) {
+              element.deltaY = -element.deltaY;
+              element.Y += element.deltaY / 2;
+            }
+            break;
+
+          case ObjectType.BULLET:
+
+            if (element.x - element.radius < 0 || element.x + element.radius > innerWidth) {
+              /*del Element*/
+              DestroyerBullet(bulDel);
+            }else if (element.y - element.radius < 0 || element.y + element.radius > innerHeight) {
+              /*del Element*/
+              DestroyerBullet(bulDel);
+            } else {/*Do Nothing*/}
+            break;
+        }
+
+        bulDel++;
+      //end switch
+    })
+    //DestroyerBullet();
+
+    /*
+     * verifico la collisione tra oggetti
+     */
+
+    let j = 1;
+    let collided;
+    let numberObjects = arena.gameObjects.length;
+    arena.gameObjects.forEach(element => {
+      for(let i = j; i < numberObjects; i++){
+
+        if(element.type == ObjectType.CIRCLE && arena.gameObjects[i].type == ObjectType.RECTANGLE)
+        {
+          collided = ColliderMix(element,arena.gameObjects[i]);
+          if(collided){delElement.push(i-1)}
+        }
+        if (element.type == ObjectType.RECTANGLE && arena.gameObjects[i].type == ObjectType.CIRCLE)
+        {
+          collided = ColliderMix(arena.gameObjects[i],element);
+          if(collided){delElement.push(i)}
+        }
+        if (element.type == ObjectType.CIRCLE && arena.gameObjects[i].type == ObjectType.CIRCLE)
+        {
+          ColliderCircle(element, arena.gameObjects[i], i);
+        }
+        if (element.type === ObjectType.RECTANGLE && arena.gameObjects[i].type === ObjectType.RECTANGLE)
+        {
+          /*
+           * Inverto soltanto la loro direzione di movimento
+           */
+          ColliderRect(element,arena.gameObjects[i]);
+        }
+      }
+      /*
+       * End for
+       */
+      j++;
+      });
+
+    /*
+     * Rimuovo gli oggetti che hanno colliso
+     *
+     */
+     Destroyer();
+}
+  /*
+   * end object collision controll
+   */
+
+   /*
+    * ex: Array#some
+    * [1, 2, 3].some(function(el) {
+    * console.log(el);
+    * return el === 2;
+    * });
+    * ritorna false al verificarsi della condizione
+    */
+
+/**************END GAME VARIABLES OBJECT FUNCTIONS******************************/
+
+
+//SERVER SIDE Socke.io WORKing
+io.on('connection', function (socket) {
+
+  //to updatePosition, unless velocity upgrade too
+  socket.on('Hello',()=>{
+    clients++;
+  })
+
+  //STEP 0 (new/first client connect)
+  socket.emit('Welcome', arena);
+
+  //STEP 2 - (1 in CLient)
+  socket.on('First_Client', ()=>{
+    createObject();
+  })
+
+  //STEP 4 - (3 in CLient)
+  socket.on('updatePositionLoop', (userInput)=>{
+    Object.assign(userInput_server,userInput);
+    updatePositionPlayers(socket.id);
+  })
+    //STEP 5 - (background loop)
+    setInterval(()=>{
+      updatePosition();
+      Collision();
+      socket.emit('updatePositionLoopBackground',arena);
+    },20);
+
+/***************** END LOOP *********************************/
+
+  socket.on('startGame', function(){
+    createPlayer(socket.id);
+  })
+  /*
+   * Se il Player è in Game Sparo
+   */
+  socket.on('mouseClicked', function(position){
+    playersGaming.forEach(el => {
+      if(el.idClient == socket.id)
+      { createBullet(position.x, position.y, el); }
+    })
+  })
+
+  /*
+   * IL CLIENT SI SCONNETTE
+   */
+
+  socket.on('disconnect',function(){
+    const delClient = (el) => {el.idClient == socket.id};
+    let index = arena.gameObjects.findIndex(delClient)
+    arena.gameObjects.splice(index,1);
+  })
+
+});
+/*
+ *...
+ */
+//END MY SERVER SIDE Socket.io WORKing--------------------------------
+
+server.on('error', onError);
+server.on('listening', onListening);
+
+/**
+ * Normalize a port into a number, string, or false.
+ */
+
+function normalizePort(val) {
+  var port = parseInt(val, 10);
+
+  if (isNaN(port)) {
+    // named pipe
+    return val;
+  }
+
+  if (port >= 0) {
+    // port number
+    return port;
+  }
+
+  return false;
+}
+
+/**
+ * Event listener for HTTP server "error" event.
+ */
+
+function onError(error) {
+  if (error.syscall !== 'listen') {
+    throw error;
+  }
+
+  var bind = typeof port === 'string'
+    ? 'Pipe ' + port
+    : 'Port ' + port;
+
+  // handle specific listen errors with friendly messages
+  switch (error.code) {
+    case 'EACCES':
+      console.error(bind + ' requires elevated privileges');
+      process.exit(1);
+      break;
+    case 'EADDRINUSE':
+      console.error(bind + ' is already in use');
+      process.exit(1);
+      break;
+    default:
+      throw error;
+  }
+}
+
+/**
+ * Event listener for HTTP server "listening" event.
+ */
+
+function onListening() {
+  var addr = server.address();
+  var bind = typeof addr === 'string'
+    ? 'pipe ' + addr
+    : 'port ' + addr.port;
+  debug('Listening on ' + bind);
+}
