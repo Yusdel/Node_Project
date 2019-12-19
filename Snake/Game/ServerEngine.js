@@ -372,12 +372,7 @@ module.exports.Engine = Engine = function (io, MaxPlayers, Config){
     }
 
     const SaveScore = (nickname, score) => {
-        let file;
-        try {
-            file = require(process.cwd() + '/Snake/Scores.json');
-        } catch (error) {
-            file = []
-        }
+        let file = require(process.cwd() + '/Snake/Scores.json');
         let roomScores = file.find(x => x.Room == io.name.replace('/', ''))
         if (!roomScores){ 
             roomScores = {Room: io.name.replace('/', ''), Scores : []};
