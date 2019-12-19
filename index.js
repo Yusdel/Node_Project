@@ -39,7 +39,7 @@ InsertUser = (username, password) => {
     fs.writeFileSync(process.cwd() + '/users.json', JSON.stringify(Users) , 'utf-8');
 }
 
-Games.forEach(game => StartProcess(game.Path, 2000))
+Games.forEach(game =>{if (game.Path) StartProcess(game.Path, 2000)})
 
 app.get('/', function(req, res){
     res.sendFile(__MainDir + '/View/home.html');
