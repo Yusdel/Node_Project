@@ -1,7 +1,8 @@
 const __MainDir = process.cwd()
 const fs = require('fs')
 const app = require('express')();
-const http = require('http').createServer(app);
+const httpReq = require('http')
+const http = httpReq.createServer(app);
 const io = require('socket.io')(http);
 const Snake = require(__MainDir + '/Snake/Game/ServerEngine');
 const config = require(__MainDir + '/config.json');
@@ -19,7 +20,17 @@ try {
 Rooms.forEach(x => x.Engine = new Snake.Engine(io.of(x.Name), x.MaxPlayers, GameConf.Config));
 
 app.get('/', function(req, res){
-    res.sendFile(__MainDir + '/Snake/Client/GamePage.html');
+    if (!req.query.nickname || !req.query.password || !req.query.home){
+        res.redirect(config.MainHost)
+        return;
+    }
+    httpReq.get(`${req.query.home}/Login/${req.query.nickname}/${req.query.password}`, x => {
+        if (x.statusCode == 200){
+            res.sendFile(__MainDir + '/Snake/Client/GamePage.html');
+            return;
+        }
+        res.redirect(req.query.home);
+    })
 });
 
 app.get('/Hub', function(req, res){

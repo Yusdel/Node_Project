@@ -78,7 +78,7 @@ function NicknameInsert(host, link){
                     $.get(Host + `/Login/${user}/${pass}`)
                         .done(() => {
                             if (link){
-                                window.location.assign(`${host}/?room=${link}&nickname=${user}&home=${Host}`)
+                                window.location.assign(`${host}/?room=${link}&nickname=${user}&password=${pass}&home=${Host}`)
                                 return;
                             }
                             window.location.assign(`${host}/?nickname=${user}&home=${Host}`)
